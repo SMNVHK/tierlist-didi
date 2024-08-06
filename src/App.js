@@ -43,7 +43,6 @@ function App() {
   const [items, setItems] = useState(initialItems);
   const [newItemText, setNewItemText] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     const itemsRef = ref(database, 'items');
@@ -56,11 +55,10 @@ function App() {
   }, []);
 
   const onDragEnd = (result) => {
-    setIsDragging(false);
     if (!result.destination) return;
     
     const { source, destination } = result;
-    const newItems = { ...items };
+    const newItems = JSON.parse(JSON.stringify(items));
     const [reorderedItem] = newItems[source.droppableId].splice(source.index, 1);
     newItems[destination.droppableId].splice(destination.index, 0, reorderedItem);
     
@@ -117,7 +115,7 @@ function App() {
           <button onClick={resetTierList} className="reset-button">Reset Tier List</button>
         </div>
 
-        <DragDropContext onDragEnd={onDragEnd} onDragStart={() => setIsDragging(true)}>
+        <DragDropContext onDragEnd={onDragEnd}>
           {Object.entries(items).map(([tier, tierItems]) => (
             <Droppable key={tier} droppableId={tier} direction="horizontal">
               {(provided) => (
@@ -137,7 +135,7 @@ function App() {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`tier-item ${snapshot.isDragging ? 'dragging' : ''} ${!snapshot.isDragging && !isDragging ? 'zoomable' : ''}`}
+                            className={`tier-item ${snapshot.isDragging ? 'dragging' : ''}`}
                           >
                             {item.image ? (
                               <img src={item.image} alt={item.content} className="item-image" />
