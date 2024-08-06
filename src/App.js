@@ -5,7 +5,6 @@ import { getDatabase, ref, onValue, set } from "firebase/database";
 import './App.css';
 import './TierList.css';
 
-// Move this to a separate config file (e.g., firebaseConfig.js)
 const firebaseConfig = {
 
   apiKey: "AIzaSyDCt4bLWo8OVYb7dO5Cjyin6VKa9czjuoo",
@@ -40,16 +39,11 @@ const initialItems = {
   unranked: ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'],
 };
 
-const tierColors = {
-  S: '#ff7f7f', A: '#ffbf7f', B: '#ffdf7f', C: '#ffff7f',
-  D: '#bfff7f', E: '#7fff7f', F: '#7fffff', unranked: '#e0e0e0',
-};
-
 function App() {
   const [items, setItems] = useState(initialItems);
   const [newItemText, setNewItemText] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
-  const [zoomedItemId, setZoomedItemId] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     const itemsRef = ref(database, 'items');
@@ -62,6 +56,7 @@ function App() {
   }, []);
 
   const onDragEnd = (result) => {
+    setIsDragging(false);
     if (!result.destination) return;
     
     const { source, destination } = result;
@@ -95,6 +90,11 @@ function App() {
     set(ref(database, 'items'), initialItems);
   };
 
+  const tierColors = {
+    S: '#ff7f7f', A: '#ffbf7f', B: '#ffdf7f', C: '#ffff7f',
+    D: '#bfff7f', E: '#7fff7f', F: '#7fffff', unranked: '#e0e0e0',
+  };
+
   return (
     <div className="App">
       <div className="tier-list">
@@ -117,7 +117,7 @@ function App() {
           <button onClick={resetTierList} className="reset-button">Reset Tier List</button>
         </div>
 
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DragDropContext onDragEnd={onDragEnd} onDragStart={() => setIsDragging(true)}>
           {Object.entries(items).map(([tier, tierItems]) => (
             <Droppable key={tier} droppableId={tier} direction="horizontal">
               {(provided) => (
@@ -132,14 +132,12 @@ function App() {
                   >
                     {tierItems.map((item, index) => (
                       <Draggable key={item.id || item} draggableId={item.id || item} index={index}>
-                        {(provided) => (
+                        {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`tier-item ${zoomedItemId === (item.id || item) ? 'zoomed' : ''}`}
-                            onMouseEnter={() => setZoomedItemId(item.id || item)}
-                            onMouseLeave={() => setZoomedItemId(null)}
+                            className={`tier-item ${snapshot.isDragging ? 'dragging' : ''} ${!snapshot.isDragging && !isDragging ? 'zoomable' : ''}`}
                           >
                             {item.image ? (
                               <img src={item.image} alt={item.content} className="item-image" />

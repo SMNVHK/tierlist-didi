@@ -1,5 +1,7 @@
 .tier-list {
+  font-family: Arial, sans-serif;
   max-width: 100%;
+  margin: 0 auto;
   padding: 20px;
 }
 
@@ -10,8 +12,9 @@ h1 {
 
 .tier {
   display: flex;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
+
 .tier-label {
   width: 30px;
   height: 30px;
@@ -25,10 +28,11 @@ h1 {
 .tier-items {
   flex-grow: 1;
   min-height: 60px;
-  padding: 5px;
+  background-color: #f0f0f0;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  padding: 5px;
+  overflow: visible;
 }
 
 .tier-item {
@@ -39,23 +43,32 @@ h1 {
   cursor: move;
   transition: all 0.3s ease;
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  overflow: hidden;
 }
 
-.tier-item.zoomed {
-  width: 300px;
-  height: 300px;
+.tier-item.zoomable:hover {
+  transform: scale(1.5);
   z-index: 1000;
-  position: absolute;
+}
+
+.tier-item.dragging {
+  transform: none !important;
 }
 
 .add-item-form {
   margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
 }
 
 .add-item-form input {
-  margin-right: 10px;
+  flex: 1;
   padding: 5px;
 }
 
@@ -74,6 +87,5 @@ h1 {
 }
 
 .reset-button {
-  margin-left: 10px;
   background-color: #f44336;
 }
