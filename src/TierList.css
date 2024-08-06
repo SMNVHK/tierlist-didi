@@ -1,0 +1,79 @@
+.tier-list {
+  max-width: 100%;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tier {
+  display: flex;
+  margin-bottom: 5px;
+}
+.tier-label {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #333;
+}
+
+.tier-items {
+  flex-grow: 1;
+  min-height: 60px;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tier-item {
+  background-color: white;
+  border: 1px solid #ddd;
+  padding: 5px;
+  margin-right: 5px;
+  cursor: move;
+  transition: all 0.3s ease;
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.tier-item.zoomed {
+  width: 300px;
+  height: 300px;
+  z-index: 1000;
+  position: absolute;
+}
+
+.add-item-form {
+  margin-bottom: 20px;
+}
+
+.add-item-form input {
+  margin-right: 10px;
+  padding: 5px;
+}
+
+.add-item-form button {
+  padding: 5px 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.item-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.reset-button {
+  margin-left: 10px;
+  background-color: #f44336;
+}
