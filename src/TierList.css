@@ -1,157 +1,82 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Roboto', sans-serif;
-  background-color: #f0f2f5;
-  margin: 0;
-  padding: 20px;
-}
-
-.app {
-  max-width: 1200px;
-  margin: 0 auto;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-}
-
-h1 {
-  text-align: center;
-  color: #5865F2;
-  margin-bottom: 20px;
-}
-
-.controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.input-text {
-  flex: 1;
-  min-width: 200px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn-add {
-  background-color: #43B581;
-  color: white;
-}
-
-.btn-reset {
-  background-color: #F04747;
-  color: white;
-}
-
-.btn:hover {
-  opacity: 0.9;
-}
-
 .tier-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.tier-row {
+.tier {
   display: flex;
   align-items: stretch;
-  min-height: 80px;
 }
 
 .tier-label {
-  min-width: 40px;
-  padding: 0 10px;
+  width: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 24px;
   color: white;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-  position: relative;
-  white-space: nowrap;
-}
-
-.tier-label input {
-  width: 100%;
-  min-width: 40px;
-  padding: 5px;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  font-size: 24px;
-  font-weight: bold;
-  text-align: center;
-  outline: none;
-}
-
-.delete-tier {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 5px;
 }
 
 .tier-items {
   flex-grow: 1;
+  min-height: 120px;
+  background-color: #f0f0f0;
   display: flex;
   align-items: center;
   padding: 5px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
   overflow: visible;
-  min-height: 120px;
 }
 
 .tier-item {
   background-color: white;
   border: 1px solid #ddd;
-  border-radius: 4px;
   padding: 5px;
   margin-right: 5px;
+  cursor: move;
+  transition: all 0.3s ease;
+  position: relative;
   width: 100px;
   height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  cursor: move;
-  transition: all 0.3s ease;
-  position: relative;
+  overflow: hidden;
 }
 
 .tier-item.zoomed {
+  position: absolute;
   width: 300px;
   height: 300px;
   z-index: 1000;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
 .item-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.add-item-form {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.add-item-form input {
+  flex: 1;
+  padding: 5px;
+}
+
+.add-item-form button {
+  padding: 5px 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.reset-button {
+  background-color: #f44336;
 }
