@@ -27,51 +27,94 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-const TIERS = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
+const DEFAULT_TIERS = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
 
-const TierItem = React.memo(({ item, index }) => (
-  <Draggable draggableId={item.id} index={index}>
-    {(provided, snapshot) => (
-      <div
-        ref={provided.innerRef}
-        {...provided.draggableProps}
-        {...provided.dragHandleProps}
-        className={`tier-item ${snapshot.isDragging ? 'dragging' : ''}`}
-      >
-        {item.image ? (
-          <img src={item.image} alt={item.content} className="item-image" />
-        ) : (
-          <span>{item.content}</span>
-        )}
-      </div>
-    )}
-  </Draggable>
-));
+const TierItem = React.memo(({ item, index }) => {
+  const [isZoomed, setIsZoomed] = useState(false);
 
-const TierRow = React.memo(({ tier, items, tierColor }) => (
-  <Droppable droppableId={tier} direction="horizontal">
-    {(provided, snapshot) => (
-      <div className="tier-row">
-        <div className="tier-label" style={{ backgroundColor: tierColor }}>
-          {tier}
-        </div>
+  return (
+    <Draggable draggableId={item.id} index={index}>
+      {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
-          {...provided.droppableProps}
-          className={`tier-items ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          className={`tier-item ${snapshot.isDragging ? 'dragging' : ''}`}
+          onMouseEnter={() => setIsZoomed(true)}
+          onMouseLeave={() => setIsZoomed(false)}
         >
-          {items.map((item, index) => (
-            <TierItem key={item.id} item={item} index={index} />
-          ))}
-          {provided.placeholder}
+          {item.image ? (
+            <>
+              <img src={item.image} alt={item.content} className="item-image" />
+              {isZoomed && (
+                <div className="image-zoom">
+                  <img src={item.image} alt={item.content} />
+                </div>
+              )}
+            </>
+          ) : (
+            <span>{item.content}</span>
+          )}
         </div>
-      </div>
-    )}
-  </Droppable>
-));
+      )}
+    </Draggable>
+  );
+});
+
+const TierRow = React.memo(({ tier, items, tierColor, onTierNameChange }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tierName, setTierName] = useState(tier);
+
+  const handleNameChange = (e) => {
+    setTierName(e.target.value);
+  };
+
+  const handleNameSubmit = () => {
+    onTierNameChange(tier, tierName);
+    setIsEditing(false);
+  };
+
+  return (
+    <Droppable droppableId={tier} direction="horizontal">
+      {(provided, snapshot) => (
+        <div className="tier-row">
+          <div 
+            className="tier-label" 
+            style={{ backgroundColor: tierColor }}
+            onDoubleClick={() => setIsEditing(true)}
+          >
+            {isEditing ? (
+              <input
+                type="text"
+                value={tierName}
+                onChange={handleNameChange}
+                onBlur={handleNameSubmit}
+                onKeyPress={(e) => e.key === 'Enter' && handleNameSubmit()}
+                autoFocus
+              />
+            ) : (
+              tierName
+            )}
+          </div>
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`tier-items ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
+          >
+            {items.map((item, index) => (
+              <TierItem key={item.id} item={item} index={index} />
+            ))}
+            {provided.placeholder}
+          </div>
+        </div>
+      )}
+    </Droppable>
+  );
+});
 
 function App() {
   const [items, setItems] = useState({});
+  const [tiers, setTiers] = useState(DEFAULT_TIERS);
   const [newItemText, setNewItemText] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
 
@@ -79,7 +122,23 @@ function App() {
     const itemsRef = ref(database, 'items');
     const unsubscribe = onValue(itemsRef, (snapshot) => {
       const data = snapshot.val() || {};
-      setItems(data);
+      const sanitizedData = Object.entries(data).reduce((acc, [tier, tierItems]) => {
+        acc[tier] = Array.isArray(tierItems) ? tierItems.map(item => ({
+          ...item,
+          id: item.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        })) : [];
+        return acc;
+      }, {});
+      setItems(sanitizedData);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const tiersRef = ref(database, 'tiers');
+    const unsubscribe = onValue(tiersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) setTiers(data);
     });
     return () => unsubscribe();
   }, []);
@@ -127,6 +186,20 @@ function App() {
     set(ref(database, 'items'), resetItems);
   }, [items.unranked]);
 
+  const handleTierNameChange = useCallback((oldName, newName) => {
+    const newTiers = tiers.map(t => t === oldName ? newName : t);
+    setTiers(newTiers);
+    set(ref(database, 'tiers'), newTiers);
+
+    if (oldName !== newName) {
+      const newItems = {...items};
+      newItems[newName] = newItems[oldName];
+      delete newItems[oldName];
+      setItems(newItems);
+      set(ref(database, 'items'), newItems);
+    }
+  }, [tiers, items]);
+
   const tierColors = {
     S: '#FF7F7F', A: '#FFBF7F', B: '#FFDF7F', C: '#FFFF7F',
     D: '#BFFF7F', E: '#7FFF7F', F: '#7FFFFF', unranked: '#E0E0E0'
@@ -155,18 +228,20 @@ function App() {
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="tier-list">
-          {TIERS.map((tier) => (
+          {tiers.map((tier) => (
             <TierRow
               key={tier}
               tier={tier}
               items={items[tier] || []}
-              tierColor={tierColors[tier]}
+              tierColor={tierColors[tier] || '#CCCCCC'}
+              onTierNameChange={handleTierNameChange}
             />
           ))}
           <TierRow
             tier="unranked"
             items={items.unranked || []}
             tierColor={tierColors.unranked}
+            onTierNameChange={handleTierNameChange}
           />
         </div>
       </DragDropContext>

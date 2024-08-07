@@ -140,3 +140,49 @@ h1 {
     width: 100%;
   }
 }
+
+.tier-item {
+  position: relative;
+}
+
+.image-zoom {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.image-zoom img {
+  max-width: 300px;
+  max-height: 300px;
+  object-fit: contain;
+}
+
+.tier-label {
+  position: relative;
+}
+
+.tier-label input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  outline: none;
+}
+
+.tier-label input:focus {
+  background: rgba(255, 255, 255, 0.2);
+}
