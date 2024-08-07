@@ -49,8 +49,20 @@ function App() {
     const unsubscribe = onValue(itemsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        setItems(data);
+        // Assurez-vous que chaque tier est un tableau
+        const validatedData = Object.entries(data).reduce((acc, [key, value]) => {
+          acc[key] = Array.isArray(value) ? value : [];
+          return acc;
+        }, {});
+        setItems(validatedData);
+      } else {
+        // Si aucune donnée n'est trouvée, utilisez initialItems
+        setItems(initialItems);
       }
+    }, (error) => {
+      console.error("Erreur lors de la lecture des données:", error);
+      // En cas d'erreur, utilisez initialItems
+      setItems(initialItems);
     });
 
     return () => unsubscribe();
@@ -61,14 +73,16 @@ function App() {
     
     const { source, destination } = result;
     const newItems = JSON.parse(JSON.stringify(items));
-    const [reorderedItem] = newItems[source.droppableId].splice(source.index, 1);
-    newItems[destination.droppableId].splice(destination.index, 0, reorderedItem);
+    const sourceItems = Array.isArray(newItems[source.droppableId]) ? newItems[source.droppableId] : [];
+    const destItems = Array.isArray(newItems[destination.droppableId]) ? newItems[destination.droppableId] : [];
+    const [reorderedItem] = sourceItems.splice(source.index, 1);
+    destItems.splice(destination.index, 0, reorderedItem);
     
-    // Mise Ã  jour de Firebase
-    const updates = {};
-    updates[`/${source.droppableId}/${source.index}`] = null;
-    updates[`/${destination.droppableId}/${destination.index}`] = reorderedItem;
-    update(ref(database, 'items'), updates);
+    newItems[source.droppableId] = sourceItems;
+    newItems[destination.droppableId] = destItems;
+
+    setItems(newItems);
+    set(ref(database, 'items'), newItems);
   };
 
   const addNewItem = () => {
@@ -80,7 +94,7 @@ function App() {
       image: newItemImage.trim() || null
     };
 
-    const newItems = {...items, unranked: [...items.unranked, newItem]};
+    const newItems = {...items, unranked: [...(items.unranked || []), newItem]};
     set(ref(database, 'items'), newItems);
 
     setNewItemText('');
@@ -131,18 +145,14 @@ function App() {
                     {...provided.droppableProps}
                     className={`tier-items ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
                   >
-                    {tierItems && tierItems.map((item, index) => (
-                      <Draggable key={item.id || item} draggableId={item.id || item} index={index}>
+                    {Array.isArray(tierItems) && tierItems.map((item, index) => (
+                      <Draggable key={item.id || `${tier}-${index}`} draggableId={item.id || `${tier}-${index}`} index={index}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                             className={`tier-item ${snapshot.isDragging ? 'dragging' : ''}`}
-                            style={{
-                              ...provided.draggableProps.style,
-                              transform: snapshot.isDragging ? provided.draggableProps.style.transform : 'translate(0, 0)',
-                            }}
                           >
                             {item.image ? (
                               <img src={item.image} alt={item.content} className="item-image" />
