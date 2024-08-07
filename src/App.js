@@ -34,39 +34,36 @@ const initialTiers = DEFAULT_TIERS.reduce((acc, tier) => {
   return acc;
 }, {});
 
+const DEFAULT_COLORS = {
+  S: '#ff7f7f', A: '#ffbf7f', B: '#ffdf7f', C: '#ffff7f',
+  D: '#bfff7f', E: '#7fff7f', F: '#7fffff', unranked: '#e0e0e0',
+};
+
 function App() {
   const [items, setItems] = useState(initialTiers);
   const [tiers, setTiers] = useState(DEFAULT_TIERS);
+  const [tierColors, setTierColors] = useState(DEFAULT_COLORS);
   const [newItemText, setNewItemText] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
-  const [zoomedItemId, setZoomedItemId] = useState(null);
-  const [tierColors, setTierColors] = useState({
-    S: '#ff7f7f', A: '#ffbf7f', B: '#ffdf7f', C: '#ffff7f',
-    D: '#bfff7f', E: '#7fff7f', F: '#7fffff', unranked: '#e0e0e0',
-  });
 
   useEffect(() => {
     const itemsRef = ref(database, 'items');
     const tiersRef = ref(database, 'tiers');
+    const colorsRef = ref(database, 'colors');
     
     onValue(itemsRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        setItems(data);
-      } else {
-        setItems(initialTiers);
-        set(itemsRef, initialTiers);
-      }
+      if (data) setItems(data);
     });
 
     onValue(tiersRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        setTiers(data);
-      } else {
-        setTiers(DEFAULT_TIERS);
-        set(tiersRef, DEFAULT_TIERS);
-      }
+      if (data) setTiers(data);
+    });
+
+    onValue(colorsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) setTierColors(data);
     });
   }, []);
 
@@ -100,14 +97,12 @@ function App() {
   }, [items, newItemText, newItemImage]);
 
   const resetTierList = useCallback(() => {
-    const resetItems = DEFAULT_TIERS.reduce((acc, tier) => {
-      acc[tier] = [];
-      return acc;
-    }, {});
-    setItems(resetItems);
+    setItems(initialTiers);
     setTiers(DEFAULT_TIERS);
-    set(ref(database, 'items'), resetItems);
+    setTierColors(DEFAULT_COLORS);
+    set(ref(database, 'items'), initialTiers);
     set(ref(database, 'tiers'), DEFAULT_TIERS);
+    set(ref(database, 'colors'), DEFAULT_COLORS);
   }, []);
 
   const handleTierNameChange = useCallback((oldName, newName) => {
@@ -115,37 +110,28 @@ function App() {
 
     const newTiers = tiers.map(t => t === oldName ? newName : t);
     setTiers(newTiers);
-    set(ref(database, 'tiers'), newTiers);
 
     const newItems = {...items};
     newItems[newName] = newItems[oldName];
     delete newItems[oldName];
     setItems(newItems);
-    set(ref(database, 'items'), newItems);
 
     const newTierColors = {...tierColors, [newName]: tierColors[oldName]};
     setTierColors(newTierColors);
+
+    set(ref(database, 'tiers'), newTiers);
+    set(ref(database, 'items'), newItems);
+    set(ref(database, 'colors'), newTierColors);
   }, [tiers, items, tierColors]);
 
-  const TierItem = React.memo(({ item, index }) => (
-    <Draggable draggableId={item.id} index={index}>
-      {(provided) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className={`tier-item ${zoomedItemId === item.id ? 'zoomed' : ''}`}
-          onMouseEnter={() => setZoomedItemId(item.id)}
-          onMouseLeave={() => setZoomedItemId(null)}
-        >
-          {item.image ? (
-            <img src={item.image} alt={item.content} className="item-image" />
-          ) : (
-            <span>{item.content}</span>
-          )}
-        </div>
+  const TierItem = React.memo(({ item }) => (
+    <div className="tier-item">
+      {item.image ? (
+        <img src={item.image} alt={item.content} className="item-image" />
+      ) : (
+        <span>{item.content}</span>
       )}
-    </Draggable>
+    </div>
   ));
 
   const TierRow = React.memo(({ tier, items, tierColor }) => {
@@ -189,7 +175,17 @@ function App() {
               className="tier-items"
             >
               {items.map((item, index) => (
-                <TierItem key={item.id} item={item} index={index} />
+                <Draggable key={item.id} draggableId={item.id} index={index}>
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                    >
+                      <TierItem item={item} />
+                    </div>
+                  )}
+                </Draggable>
               ))}
               {provided.placeholder}
             </div>
