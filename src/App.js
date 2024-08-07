@@ -47,19 +47,12 @@ const TierItem = React.memo(({ item, index }) => {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`tier-item ${snapshot.isDragging ? 'dragging' : ''}`}
+          className={`tier-item ${snapshot.isDragging ? 'dragging' : ''} ${isZoomed ? 'zoomed' : ''}`}
           onMouseEnter={() => setIsZoomed(true)}
           onMouseLeave={() => setIsZoomed(false)}
         >
           {item.image ? (
-            <>
-              <img src={item.image} alt={item.content} className="item-image" />
-              {isZoomed && (
-                <div className="image-zoom">
-                  <img src={item.image} alt={item.content} />
-                </div>
-              )}
-            </>
+            <img src={item.image} alt={item.content} className="item-image" />
           ) : (
             <span>{item.content}</span>
           )}
@@ -126,6 +119,10 @@ function App() {
   const [newItemText, setNewItemText] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
   const [error, setError] = useState(null);
+  const [tierColors, setTierColors] = useState({
+    S: '#FF7F7F', A: '#FFBF7F', B: '#FFDF7F', C: '#FFFF7F',
+    D: '#BFFF7F', E: '#7FFF7F', F: '#7FFFFF', unranked: '#E0E0E0'
+  });
 
   useEffect(() => {
     const itemsRef = ref(database, 'items');
@@ -232,7 +229,10 @@ function App() {
     delete newItems[oldName];
     setItems(newItems);
     set(ref(database, 'items'), newItems);
-  }, [tiers, items]);
+
+    const newTierColors = {...tierColors, [newName]: tierColors[oldName]};
+    setTierColors(newTierColors);
+  }, [tiers, items, tierColors]);
 
   const handleDeleteTier = useCallback((tierToDelete) => {
     const newTiers = tiers.filter(t => t !== tierToDelete);
@@ -244,12 +244,11 @@ function App() {
     delete newItems[tierToDelete];
     setItems(newItems);
     set(ref(database, 'items'), newItems);
-  }, [tiers, items]);
 
-  const tierColors = {
-    S: '#FF7F7F', A: '#FFBF7F', B: '#FFDF7F', C: '#FFFF7F',
-    D: '#BFFF7F', E: '#7FFF7F', F: '#7FFFFF', unranked: '#E0E0E0'
-  };
+    const newTierColors = {...tierColors};
+    delete newTierColors[tierToDelete];
+    setTierColors(newTierColors);
+  }, [tiers, items, tierColors]);
 
   return (
     <div className="app">

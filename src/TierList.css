@@ -120,11 +120,11 @@ h1 {
   flex-grow: 1;
   display: flex;
   align-items: center;
-  padding: 10px;
-  background-color: #f9f9f9;
+  padding: 5px;
+  background-color: #f0f0f0;
   border-radius: 4px;
-  overflow-x: auto;
-  min-height: 80px;
+  overflow: visible;
+  min-height: 120px;
 }
 
 .tier-item {
@@ -132,82 +132,26 @@ h1 {
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 5px;
-  margin-right: 10px;
-  width: 60px;
-  height: 60px;
+  margin-right: 5px;
+  width: 100px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   cursor: move;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
 }
 
-.tier-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.tier-item.dragging {
-  transform: scale(1.05);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+.tier-item.zoomed {
+  width: 300px;
+  height: 300px;
+  z-index: 1000;
 }
 
 .item-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: cover;
-}
-
-.image-zoom {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1000;
-  background-color: rgba(255, 255, 255, 0.9);
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.image-zoom img {
-  max-width: 90vw;
-  max-height: 90vh;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-}
-
-.error-message {
-  background-color: #F04747;
-  color: white;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-@media (max-width: 768px) {
-  .controls {
-    flex-direction: column;
-  }
-
-  .input-text, .btn {
-    width: 100%;
-  }
-
-  .tier-row {
-    flex-direction: column;
-  }
-
-  .tier-label {
-    width: 100%;
-    height: 40px;
-  }
-
-  .tier-items {
-    min-height: 120px;
-  }
 }
