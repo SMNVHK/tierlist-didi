@@ -48,20 +48,18 @@ const TierItem = React.memo(({ item, index }) => {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={`tier-item ${snapshot.isDragging ? 'dragging' : ''}`}
+          onMouseEnter={() => setIsZoomed(true)}
+          onMouseLeave={() => setIsZoomed(false)}
         >
           {item.image ? (
-            <div
-              className="image-container"
-              onMouseEnter={() => setIsZoomed(true)}
-              onMouseLeave={() => setIsZoomed(false)}
-            >
+            <>
               <img src={item.image} alt={item.content} className="item-image" />
               {isZoomed && (
                 <div className="image-zoom">
                   <img src={item.image} alt={item.content} />
                 </div>
               )}
-            </div>
+            </>
           ) : (
             <span>{item.content}</span>
           )}
@@ -71,7 +69,7 @@ const TierItem = React.memo(({ item, index }) => {
   );
 });
 
-const TierRow = React.memo(({ tier, items, tierColor, onTierNameChange }) => {
+const TierRow = React.memo(({ tier, items, tierColor, onTierNameChange, onDeleteTier }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tierName, setTierName] = useState(tier);
 
@@ -91,7 +89,6 @@ const TierRow = React.memo(({ tier, items, tierColor, onTierNameChange }) => {
           <div 
             className="tier-label" 
             style={{ backgroundColor: tierColor }}
-            onDoubleClick={() => setIsEditing(true)}
           >
             {isEditing ? (
               <input
@@ -103,8 +100,9 @@ const TierRow = React.memo(({ tier, items, tierColor, onTierNameChange }) => {
                 autoFocus
               />
             ) : (
-              tierName
+              <span onDoubleClick={() => setIsEditing(true)}>{tierName}</span>
             )}
+            <button className="delete-tier" onClick={() => onDeleteTier(tier)}>×</button>
           </div>
           <div
             ref={provided.innerRef}
@@ -133,8 +131,6 @@ function App() {
     const itemsRef = ref(database, 'items');
     const unsubscribe = onValue(itemsRef, (snapshot) => {
       const data = snapshot.val();
-      console.log('Raw data from Firebase:', data);
-
       if (data === null || typeof data !== 'object') {
         console.error('Invalid data structure received from Firebase');
         setError('Invalid data structure received from Firebase');
@@ -153,7 +149,6 @@ function App() {
         return acc;
       }, {});
 
-      console.log('Sanitized data:', sanitizedData);
       setItems(sanitizedData);
       setError(null);
     }, (error) => {
@@ -215,10 +210,10 @@ function App() {
   }, [items, newItemText, newItemImage]);
 
   const resetTierList = useCallback(() => {
-    const resetItems = { 
-      unranked: Object.values(items).flat(),
-      S: [], A: [], B: [], C: [], D: [], E: [], F: []
-    };
+    const resetItems = DEFAULT_TIERS.reduce((acc, tier) => {
+      acc[tier] = tier === 'unranked' ? Object.values(items).flat() : [];
+      return acc;
+    }, {});
     setItems(resetItems);
     setTiers(DEFAULT_TIERS);
     set(ref(database, 'items'), resetItems);
@@ -235,6 +230,18 @@ function App() {
     const newItems = {...items};
     newItems[newName] = newItems[oldName];
     delete newItems[oldName];
+    setItems(newItems);
+    set(ref(database, 'items'), newItems);
+  }, [tiers, items]);
+
+  const handleDeleteTier = useCallback((tierToDelete) => {
+    const newTiers = tiers.filter(t => t !== tierToDelete);
+    setTiers(newTiers);
+    set(ref(database, 'tiers'), newTiers);
+
+    const newItems = {...items};
+    newItems.unranked = [...(newItems.unranked || []), ...(newItems[tierToDelete] || [])];
+    delete newItems[tierToDelete];
     setItems(newItems);
     set(ref(database, 'items'), newItems);
   }, [tiers, items]);
@@ -275,6 +282,7 @@ function App() {
               items={items[tier] || []}
               tierColor={tierColors[tier] || '#CCCCCC'}
               onTierNameChange={handleTierNameChange}
+              onDeleteTier={handleDeleteTier}
             />
           ))}
         </div>
