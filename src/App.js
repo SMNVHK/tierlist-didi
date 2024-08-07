@@ -29,10 +29,8 @@ const database = getDatabase(app);
 
 const DEFAULT_TIERS = ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'unranked'];
 
-// Fonction utilitaire pour vérifier si un objet est un tableau non vide
 const isValidArray = (arr) => Array.isArray(arr) && arr.length > 0;
 
-// Fonction utilitaire pour sanitizer un item
 const sanitizeItem = (item) => ({
   id: item.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
   content: item.content || 'Unnamed Item',
@@ -133,7 +131,7 @@ function App() {
     const itemsRef = ref(database, 'items');
     const unsubscribe = onValue(itemsRef, (snapshot) => {
       const data = snapshot.val();
-      console.log('Raw data from Firebase:', data); // Log des données brutes
+      console.log('Raw data from Firebase:', data);
 
       if (data === null || typeof data !== 'object') {
         console.error('Invalid data structure received from Firebase');
@@ -153,7 +151,7 @@ function App() {
         return acc;
       }, {});
 
-      console.log('Sanitized data:', sanitizedData); // Log des données nettoyées
+      console.log('Sanitized data:', sanitizedData);
       setItems(sanitizedData);
       setError(null);
     }, (error) => {

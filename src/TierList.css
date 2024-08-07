@@ -78,7 +78,8 @@ h1 {
 }
 
 .tier-label {
-  width: 40px;
+  min-width: 40px;
+  padding: 0 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,25 +88,20 @@ h1 {
   color: white;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   position: relative;
+  white-space: nowrap;
 }
 
 .tier-label input {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
-  background: transparent;
+  min-width: 40px;
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
   font-size: 24px;
   font-weight: bold;
   text-align: center;
   outline: none;
-}
-
-.tier-label input:focus {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .tier-items {
@@ -154,9 +150,9 @@ h1 {
 
 .image-zoom {
   position: absolute;
-  top: 100%;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   z-index: 1000;
   background-color: white;
   border: 1px solid #ddd;
@@ -166,8 +162,8 @@ h1 {
 }
 
 .image-zoom img {
-  max-width: 300px;
-  max-height: 300px;
+  max-width: 200px;
+  max-height: 200px;
   object-fit: contain;
 }
 
@@ -189,6 +185,10 @@ h1 {
     width: 100%;
   }
 
+  .input-text, .btn {
+    width: 100%;
+  }
+
   .tier-row {
     flex-direction: column;
   }
@@ -201,4 +201,44 @@ h1 {
   .tier-items {
     min-height: 120px;
   }
+}
+
+/* Ajouts pour améliorer le zoom et l'édition des catégories */
+.tier-item {
+  position: relative;
+}
+
+.image-zoom {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.image-zoom img {
+  max-width: 80vw;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+.tier-label input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  text-align: center;
+  outline: none;
+}
+
+.tier-label input:focus {
+  background: rgba(255, 255, 255, 0.2);
 }
