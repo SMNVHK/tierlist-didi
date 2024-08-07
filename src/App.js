@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, set } from "firebase/database";
+import { getDatabase, ref, onValue, set, update } from "firebase/database";
 import './App.css';
 import './TierList.css';
 
@@ -46,12 +46,14 @@ function App() {
 
   useEffect(() => {
     const itemsRef = ref(database, 'items');
-    onValue(itemsRef, (snapshot) => {
+    const unsubscribe = onValue(itemsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         setItems(data);
       }
     });
+
+    return () => unsubscribe();
   }, []);
 
   const onDragEnd = (result) => {
@@ -62,8 +64,11 @@ function App() {
     const [reorderedItem] = newItems[source.droppableId].splice(source.index, 1);
     newItems[destination.droppableId].splice(destination.index, 0, reorderedItem);
     
-    setItems(newItems);
-    set(ref(database, 'items'), newItems);
+    // Mise Ã  jour de Firebase
+    const updates = {};
+    updates[`/${source.droppableId}/${source.index}`] = null;
+    updates[`/${destination.droppableId}/${destination.index}`] = reorderedItem;
+    update(ref(database, 'items'), updates);
   };
 
   const addNewItem = () => {
@@ -76,7 +81,6 @@ function App() {
     };
 
     const newItems = {...items, unranked: [...items.unranked, newItem]};
-    setItems(newItems);
     set(ref(database, 'items'), newItems);
 
     setNewItemText('');
@@ -84,7 +88,6 @@ function App() {
   };
 
   const resetTierList = () => {
-    setItems(initialItems);
     set(ref(database, 'items'), initialItems);
   };
 
@@ -118,7 +121,7 @@ function App() {
         <DragDropContext onDragEnd={onDragEnd}>
           {Object.entries(items).map(([tier, tierItems]) => (
             <Droppable key={tier} droppableId={tier} direction="horizontal">
-              {(provided) => (
+              {(provided, snapshot) => (
                 <div className="tier">
                   <div className="tier-label" style={{ backgroundColor: tierColors[tier] }}>
                     {tier}
@@ -126,7 +129,7 @@ function App() {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className="tier-items"
+                    className={`tier-items ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
                   >
                     {tierItems.map((item, index) => (
                       <Draggable key={item.id || item} draggableId={item.id || item} index={index}>
@@ -136,6 +139,10 @@ function App() {
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                             className={`tier-item ${snapshot.isDragging ? 'dragging' : ''}`}
+                            style={{
+                              ...provided.draggableProps.style,
+                              transform: snapshot.isDragging ? provided.draggableProps.style.transform : 'translate(0, 0)',
+                            }}
                           >
                             {item.image ? (
                               <img src={item.image} alt={item.content} className="item-image" />
