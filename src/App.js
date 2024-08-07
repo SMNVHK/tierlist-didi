@@ -48,18 +48,20 @@ const TierItem = React.memo(({ item, index }) => {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={`tier-item ${snapshot.isDragging ? 'dragging' : ''}`}
-          onMouseEnter={() => setIsZoomed(true)}
-          onMouseLeave={() => setIsZoomed(false)}
         >
           {item.image ? (
-            <>
+            <div
+              className="image-container"
+              onMouseEnter={() => setIsZoomed(true)}
+              onMouseLeave={() => setIsZoomed(false)}
+            >
               <img src={item.image} alt={item.content} className="item-image" />
               {isZoomed && (
                 <div className="image-zoom">
                   <img src={item.image} alt={item.content} />
                 </div>
               )}
-            </>
+            </div>
           ) : (
             <span>{item.content}</span>
           )}
@@ -213,23 +215,28 @@ function App() {
   }, [items, newItemText, newItemImage]);
 
   const resetTierList = useCallback(() => {
-    const resetItems = { unranked: items.unranked || [] };
+    const resetItems = { 
+      unranked: Object.values(items).flat(),
+      S: [], A: [], B: [], C: [], D: [], E: [], F: []
+    };
     setItems(resetItems);
+    setTiers(DEFAULT_TIERS);
     set(ref(database, 'items'), resetItems);
-  }, [items.unranked]);
+    set(ref(database, 'tiers'), DEFAULT_TIERS);
+  }, [items]);
 
   const handleTierNameChange = useCallback((oldName, newName) => {
+    if (oldName === newName) return;
+
     const newTiers = tiers.map(t => t === oldName ? newName : t);
     setTiers(newTiers);
     set(ref(database, 'tiers'), newTiers);
 
-    if (oldName !== newName) {
-      const newItems = {...items};
-      newItems[newName] = newItems[oldName];
-      delete newItems[oldName];
-      setItems(newItems);
-      set(ref(database, 'items'), newItems);
-    }
+    const newItems = {...items};
+    newItems[newName] = newItems[oldName];
+    delete newItems[oldName];
+    setItems(newItems);
+    set(ref(database, 'items'), newItems);
   }, [tiers, items]);
 
   const tierColors = {
