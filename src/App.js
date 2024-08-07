@@ -27,7 +27,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-const DEFAULT_TIERS = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
+const DEFAULT_TIERS = ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'unranked'];
+
+// Fonction utilitaire pour vérifier si un objet est un tableau non vide
+const isValidArray = (arr) => Array.isArray(arr) && arr.length > 0;
+
+// Fonction utilitaire pour sanitizer un item
+const sanitizeItem = (item) => ({
+  id: item.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  content: item.content || 'Unnamed Item',
+  image: item.image || null
+});
 
 const TierItem = React.memo(({ item, index }) => {
   const [isZoomed, setIsZoomed] = useState(false);
@@ -101,7 +111,7 @@ const TierRow = React.memo(({ tier, items, tierColor, onTierNameChange }) => {
             {...provided.droppableProps}
             className={`tier-items ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
           >
-            {items.map((item, index) => (
+            {items && items.map((item, index) => (
               <TierItem key={item.id} item={item} index={index} />
             ))}
             {provided.placeholder}
@@ -117,20 +127,40 @@ function App() {
   const [tiers, setTiers] = useState(DEFAULT_TIERS);
   const [newItemText, setNewItemText] = useState('');
   const [newItemImage, setNewItemImage] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const itemsRef = ref(database, 'items');
     const unsubscribe = onValue(itemsRef, (snapshot) => {
-      const data = snapshot.val() || {};
+      const data = snapshot.val();
+      console.log('Raw data from Firebase:', data); // Log des données brutes
+
+      if (data === null || typeof data !== 'object') {
+        console.error('Invalid data structure received from Firebase');
+        setError('Invalid data structure received from Firebase');
+        return;
+      }
+
       const sanitizedData = Object.entries(data).reduce((acc, [tier, tierItems]) => {
-        acc[tier] = Array.isArray(tierItems) ? tierItems.map(item => ({
-          ...item,
-          id: item.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        })) : [];
+        if (isValidArray(tierItems)) {
+          acc[tier] = tierItems.map(sanitizeItem);
+        } else if (typeof tierItems === 'object' && tierItems !== null) {
+          acc[tier] = Object.values(tierItems).map(sanitizeItem);
+        } else {
+          console.warn(`Invalid tier data for ${tier}:`, tierItems);
+          acc[tier] = [];
+        }
         return acc;
       }, {});
+
+      console.log('Sanitized data:', sanitizedData); // Log des données nettoyées
       setItems(sanitizedData);
+      setError(null);
+    }, (error) => {
+      console.error('Error fetching data:', error);
+      setError('Error fetching data from Firebase');
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -138,7 +168,11 @@ function App() {
     const tiersRef = ref(database, 'tiers');
     const unsubscribe = onValue(tiersRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) setTiers(data);
+      if (data && Array.isArray(data)) {
+        setTiers(data);
+      } else {
+        console.warn('Invalid tiers data:', data);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -208,6 +242,7 @@ function App() {
   return (
     <div className="app">
       <h1>Discord Tier List</h1>
+      {error && <div className="error-message">{error}</div>}
       <div className="controls">
         <input
           type="text"
@@ -237,12 +272,6 @@ function App() {
               onTierNameChange={handleTierNameChange}
             />
           ))}
-          <TierRow
-            tier="unranked"
-            items={items.unranked || []}
-            tierColor={tierColors.unranked}
-            onTierNameChange={handleTierNameChange}
-          />
         </div>
       </DragDropContext>
     </div>
