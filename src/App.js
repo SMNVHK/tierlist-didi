@@ -131,7 +131,7 @@ function App() {
                     {...provided.droppableProps}
                     className={`tier-items ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
                   >
-                    {tierItems.map((item, index) => (
+                    {tierItems && tierItems.map((item, index) => (
                       <Draggable key={item.id || item} draggableId={item.id || item} index={index}>
                         {(provided, snapshot) => (
                           <div
