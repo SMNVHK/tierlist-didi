@@ -29,7 +29,10 @@ const database = getDatabase(app);
 
 const DEFAULT_TIERS = ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'unranked'];
 
-const initialItems = {};
+const initialItems = DEFAULT_TIERS.reduce((acc, tier) => {
+  acc[tier] = [];
+  return acc;
+}, {});
 
 const DEFAULT_COLORS = {
   S: '#ff7f7f', A: '#ffbf7f', B: '#ffdf7f', C: '#ffff7f',
@@ -51,20 +54,10 @@ function App() {
     onValue(itemsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // Ensure all tiers have an array, even if empty
-        const updatedItems = {...initialItems};
-        Object.keys(data).forEach(tier => {
-          updatedItems[tier] = Array.isArray(data[tier]) ? data[tier] : [];
-        });
-        setItems(updatedItems);
+        setItems(data);
       } else {
-        // Initialize with empty arrays for each tier
-        const emptyItems = tiers.reduce((acc, tier) => {
-          acc[tier] = [];
-          return acc;
-        }, {});
-        setItems(emptyItems);
-        updateFirebase(emptyItems);
+        setItems(initialItems);
+        updateFirebase(initialItems);
       }
     });
 
@@ -81,18 +74,14 @@ function App() {
 
   const updateFirebase = useCallback((newItems) => {
     set(ref(database, 'items'), newItems);
-  }, [database]);
+  }, []);
 
   const onDragEnd = useCallback((result) => {
     const { source, destination } = result;
     if (!destination) return;
 
-    const newItems = JSON.parse(JSON.stringify(items));
-    
-    // Remove from source
+    const newItems = {...items};
     const [reorderedItem] = newItems[source.droppableId].splice(source.index, 1);
-    
-    // Add to destination
     newItems[destination.droppableId].splice(destination.index, 0, reorderedItem);
 
     setItems(newItems);
@@ -108,12 +97,7 @@ function App() {
       image: newItemImage.trim() || null
     };
 
-    const newItems = {...items};
-    if (!Array.isArray(newItems.unranked)) {
-      newItems.unranked = [];
-    }
-    newItems.unranked.push(newItem);
-    
+    const newItems = {...items, unranked: [...items.unranked, newItem]};
     setItems(newItems);
     updateFirebase(newItems);
 
@@ -122,17 +106,13 @@ function App() {
   }, [items, newItemText, newItemImage, updateFirebase]);
 
   const resetTierList = useCallback(() => {
-    const emptyItems = tiers.reduce((acc, tier) => {
-      acc[tier] = [];
-      return acc;
-    }, {});
-    setItems(emptyItems);
+    setItems(initialItems);
     setTiers(DEFAULT_TIERS);
     setTierColors(DEFAULT_COLORS);
-    updateFirebase(emptyItems);
+    updateFirebase(initialItems);
     set(ref(database, 'tiers'), DEFAULT_TIERS);
     set(ref(database, 'colors'), DEFAULT_COLORS);
-  }, [tiers, updateFirebase]);
+  }, [updateFirebase]);
 
   const handleTierNameChange = useCallback((oldName, newName) => {
     if (oldName === newName) return;
@@ -141,7 +121,7 @@ function App() {
     setTiers(newTiers);
 
     const newItems = {...items};
-    newItems[newName] = newItems[oldName] || [];
+    newItems[newName] = newItems[oldName];
     delete newItems[oldName];
     setItems(newItems);
 
