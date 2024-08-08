@@ -71,7 +71,7 @@ function App() {
     const { source, destination } = result;
     if (!destination) return;
 
-    const newItems = {...items};
+    const newItems = JSON.parse(JSON.stringify(items)); // Deep copy
     const [reorderedItem] = newItems[source.droppableId].splice(source.index, 1);
     newItems[destination.droppableId].splice(destination.index, 0, reorderedItem);
 
