@@ -143,8 +143,8 @@ h1 {
   border-radius: 4px;
   padding: 5px;
   margin-right: 10px;
-  width: 100px;
-  height: 100px;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,7 +152,7 @@ h1 {
   cursor: move;
   transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   user-select: none;
 }
 
@@ -175,12 +175,12 @@ h1 {
 }
 
 .tier-item:hover .item-image {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(2);
-  max-width: 90vw;
-  max-height: 90vh;
+  transform: translate(-50%, -50%);
+  max-width: none;
+  max-height: none;
   width: auto;
   height: auto;
   z-index: 1000;

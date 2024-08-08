@@ -67,17 +67,21 @@ function App() {
     });
   }, []);
 
+  const updateFirebase = useCallback((newItems) => {
+    set(ref(database, 'items'), newItems);
+  }, [database]);
+
   const onDragEnd = useCallback((result) => {
     const { source, destination } = result;
     if (!destination) return;
 
-    const newItems = JSON.parse(JSON.stringify(items)); // Deep copy
+    const newItems = JSON.parse(JSON.stringify(items));
     const [reorderedItem] = newItems[source.droppableId].splice(source.index, 1);
     newItems[destination.droppableId].splice(destination.index, 0, reorderedItem);
 
     setItems(newItems);
-    set(ref(database, 'items'), newItems);
-  }, [items]);
+    updateFirebase(newItems);
+  }, [items, updateFirebase]);
 
   const addNewItem = useCallback(() => {
     if (newItemText.trim() === '' && newItemImage.trim() === '') return;
@@ -90,20 +94,20 @@ function App() {
 
     const newItems = {...items, unranked: [...items.unranked, newItem]};
     setItems(newItems);
-    set(ref(database, 'items'), newItems);
+    updateFirebase(newItems);
 
     setNewItemText('');
     setNewItemImage('');
-  }, [items, newItemText, newItemImage]);
+  }, [items, newItemText, newItemImage, updateFirebase]);
 
   const resetTierList = useCallback(() => {
     setItems(initialTiers);
     setTiers(DEFAULT_TIERS);
     setTierColors(DEFAULT_COLORS);
-    set(ref(database, 'items'), initialTiers);
+    updateFirebase(initialTiers);
     set(ref(database, 'tiers'), DEFAULT_TIERS);
     set(ref(database, 'colors'), DEFAULT_COLORS);
-  }, []);
+  }, [updateFirebase]);
 
   const handleTierNameChange = useCallback((oldName, newName) => {
     if (oldName === newName) return;
@@ -119,10 +123,10 @@ function App() {
     const newTierColors = {...tierColors, [newName]: tierColors[oldName]};
     setTierColors(newTierColors);
 
+    updateFirebase(newItems);
     set(ref(database, 'tiers'), newTiers);
-    set(ref(database, 'items'), newItems);
     set(ref(database, 'colors'), newTierColors);
-  }, [tiers, items, tierColors]);
+  }, [tiers, items, tierColors, updateFirebase]);
 
   const TierItem = React.memo(({ item }) => (
     <div className="tier-item">
