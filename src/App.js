@@ -29,10 +29,7 @@ const database = getDatabase(app);
 
 const DEFAULT_TIERS = ['S', 'A', 'B', 'C', 'D', 'E', 'F', 'unranked'];
 
-const initialTiers = DEFAULT_TIERS.reduce((acc, tier) => {
-  acc[tier] = [];
-  return acc;
-}, {});
+const initialItems = {};
 
 const DEFAULT_COLORS = {
   S: '#ff7f7f', A: '#ffbf7f', B: '#ffdf7f', C: '#ffff7f',
@@ -40,7 +37,7 @@ const DEFAULT_COLORS = {
 };
 
 function App() {
-  const [items, setItems] = useState(initialTiers);
+  const [items, setItems] = useState(initialItems);
   const [tiers, setTiers] = useState(DEFAULT_TIERS);
   const [tierColors, setTierColors] = useState(DEFAULT_COLORS);
   const [newItemText, setNewItemText] = useState('');
@@ -53,7 +50,22 @@ function App() {
     
     onValue(itemsRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) setItems(data);
+      if (data) {
+        // Ensure all tiers have an array, even if empty
+        const updatedItems = {...initialItems};
+        Object.keys(data).forEach(tier => {
+          updatedItems[tier] = Array.isArray(data[tier]) ? data[tier] : [];
+        });
+        setItems(updatedItems);
+      } else {
+        // Initialize with empty arrays for each tier
+        const emptyItems = tiers.reduce((acc, tier) => {
+          acc[tier] = [];
+          return acc;
+        }, {});
+        setItems(emptyItems);
+        updateFirebase(emptyItems);
+      }
     });
 
     onValue(tiersRef, (snapshot) => {
@@ -76,7 +88,11 @@ function App() {
     if (!destination) return;
 
     const newItems = JSON.parse(JSON.stringify(items));
+    
+    // Remove from source
     const [reorderedItem] = newItems[source.droppableId].splice(source.index, 1);
+    
+    // Add to destination
     newItems[destination.droppableId].splice(destination.index, 0, reorderedItem);
 
     setItems(newItems);
@@ -92,7 +108,12 @@ function App() {
       image: newItemImage.trim() || null
     };
 
-    const newItems = {...items, unranked: [...items.unranked, newItem]};
+    const newItems = {...items};
+    if (!Array.isArray(newItems.unranked)) {
+      newItems.unranked = [];
+    }
+    newItems.unranked.push(newItem);
+    
     setItems(newItems);
     updateFirebase(newItems);
 
@@ -101,13 +122,17 @@ function App() {
   }, [items, newItemText, newItemImage, updateFirebase]);
 
   const resetTierList = useCallback(() => {
-    setItems(initialTiers);
+    const emptyItems = tiers.reduce((acc, tier) => {
+      acc[tier] = [];
+      return acc;
+    }, {});
+    setItems(emptyItems);
     setTiers(DEFAULT_TIERS);
     setTierColors(DEFAULT_COLORS);
-    updateFirebase(initialTiers);
+    updateFirebase(emptyItems);
     set(ref(database, 'tiers'), DEFAULT_TIERS);
     set(ref(database, 'colors'), DEFAULT_COLORS);
-  }, [updateFirebase]);
+  }, [tiers, updateFirebase]);
 
   const handleTierNameChange = useCallback((oldName, newName) => {
     if (oldName === newName) return;
@@ -116,7 +141,7 @@ function App() {
     setTiers(newTiers);
 
     const newItems = {...items};
-    newItems[newName] = newItems[oldName];
+    newItems[newName] = newItems[oldName] || [];
     delete newItems[oldName];
     setItems(newItems);
 
@@ -178,7 +203,7 @@ function App() {
               {...provided.droppableProps}
               className="tier-items"
             >
-              {items.map((item, index) => (
+              {items && items.map((item, index) => (
                 <Draggable key={item.id} draggableId={item.id} index={index}>
                   {(provided) => (
                     <div
